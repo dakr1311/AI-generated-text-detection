@@ -1,44 +1,39 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 import pickle
-import uvicorn
+import os
 
-# Create FastAPI app
-app = FastAPI(title="AI Text Detection API")
+app = FastAPI()
 
-# Load trained model and vectorizer
-model = pickle.load(open("model.pkl", "rb"))
-vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+# Path setup
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Home route
+model_path = os.path.join(BASE_DIR, "models", "ai_text_model.pkl")
+vectorizer_path = os.path.join(BASE_DIR, "models", "tfidf_vectorizer.pkl")
+
+# Load model
+with open(model_path, "rb") as f:
+    model = pickle.load(f)
+
+with open(vectorizer_path, "rb") as f:
+    vectorizer = pickle.load(f)
+
+# Input format
+class TextInput(BaseModel):
+    text: str
+
 @app.get("/")
 def home():
-    return {
-        "message": "AI Text Detection API is running"
-    }
+    return {"message": "API running 🚀"}
 
+@app.post("/predict")
+def predict(input: TextInput):
+    vec = vectorizer.transform([input.text])
 
-# Prediction route
-@app.get("/predict")
-def predict(text: str):
-
-    # Convert text into TF-IDF vector
-    vector = vectorizer.transform([text])
-
-    # Make prediction
-    prediction = model.predict(vector)[0]
-
-    # Convert result to readable output
-    if prediction == 1:
-        result = "AI Generated"
-    else:
-        result = "Human Written"
+    pred = model.predict(vec)[0]
+    prob = model.predict_proba(vec)[0]
 
     return {
-        "input_text": text,
-        "prediction": result
+        "prediction": "AI Generated Text" if pred == 1 else "Human Written Text",
+        "confidence": float(max(prob))
     }
-
-
-# Run server locally
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
