@@ -6,11 +6,12 @@ import os
 app = FastAPI()
 
 # Path setup
+import os
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-model_path = os.path.join(BASE_DIR, "models", "ai_text_model.pkl")
-vectorizer_path = os.path.join(BASE_DIR, "models", "tfidf_vectorizer.pkl")
-
+model_path = os.path.join(BASE_DIR, "train.pkl")
+vectorizer_path = os.path.join(BASE_DIR, "vectorizer.pkl")
 # Load model
 with open(model_path, "rb") as f:
     model = pickle.load(f)
